@@ -1,0 +1,46 @@
+Value = Var val = SELECTEDVALUE(Metrics[Metrics])
+var submetric = SELECTEDVALUE(Metrics[Sub Metrics])
+var subdetailmetric = SELECTEDVALUE(Metrics[SubDetailMetrics])
+
+RETURN
+SWITCH(TRUE(),
+val = "Service Level %",FORMAT(IFERROR([ServiceLevel%] / 100,0),"0.0%"),
+val = "ASA",[ASA],
+
+val = "Occupancy %",FORMAT(IFERROR((SUM(ENT[Calls_Handled]) * (SUM(ENT[TALKTIME_SEC]) + SUM(ENT[HOLDTIME_SEC]) + SUM(ENT[WRAPTIME_SEC])) / SUM(ENT[calls_Handled])),0) / IFERROR((SUM(ENT[Calls_Handled]) * (SUM(ENT[TALKTIME_SEC]) + SUM(ENT[HOLDTIME_SEC]) + SUM(ENT[WRAPTIME_SEC])) / SUM(ENT[calls_Handled]) + SUM(ENT[READYTIME_SEC])),1),"0.0%"),
+
+val = "Calls Forecast",SUM(ENT[Calls_Forecasted]),
+val = "Calls Offered",SUM(ENT[Offered_Calls]),
+val = "Calls Handled",SUM(ENT[calls_Handled]),
+/*val = "OTF %",FORMAT(IFERROR(SUM(ENT[Offered_Calls]) / SUM(ENT[Calls_Forecasted]),0),"0.0%"),*/
+val = "OTF %",FORMAT([M_OTF],"0.0%"),
+val = "HTF %",FORMAT(IFERROR(SUM(ENT[Calls_Handled]) / SUM(ENT[Calls_Forecasted]),0),"0.0%"),
+val = "Calls Abandoned",SUM(ENT[Calls_Abn]),
+val = "Calls Abandoned %",FORMAT(IFERROR(SUM(ENT[Calls_Abn]) / Sum(ENT[Calls_Handled]),0),"0.0%"),
+val = "AHT FC",sum(ENT[AHT_Revised_Seconds]),
+val = "AHT Actual",IFERROR((SUM(ENT[TALKTIME_SEC]) + SUM(ENT[HOLDTIME_SEC]) + SUM(ENT[WRAPTIME_SEC])) / SUM(ENT[calls_Handled]),0),
+val = "AHT %",FORMAT( IFERROR(((SUM(ENT[TALKTIME_SEC]) + SUM(ENT[HOLDTIME_SEC]) + SUM(ENT[WRAPTIME_SEC])) / SUM(ENT[calls_Handled])) / sum(ENT[AHT_Revised_Seconds]),0),"0.0%"),
+val = "Volume Share %",IFERROR(FORMAT(SUM(ENT[OGA_Calls_Handled]) / SUM(ENT[Calls_Handled]),"0.0%"),0),
+val = "Occupancy (OGA)",IFERROR(FORMAT(((SUM(ENT[OGA_Calls_Handled]) * (SUM(ENT[OGA_TalkTime])+SUM(ENT[OGA_WrapTime]))) / SUM(ENT[OGA_Calls_Handled])) / ((SUM(ENT[OGA_Calls_Handled]) * (SUM(ENT[OGA_TalkTime])+SUM(ENT[OGA_WrapTime]))) / SUM(ENT[OGA_Calls_Handled]) + SUM(ENT[OGA_ReadyTime])),"0.0%"),0),
+val = "Calls Handled (OGA)",SUM(ENT[OGA_Calls_Handled]),
+submetric = "Avg Talk Time (OGA)",IFERROR((SUM(ENT[OGA_TalkTime]) - SUM(ENT[OGA_HoldTIme]))/SUM(ENT[OGA_Calls_Handled]),0),
+submetric = "Avg Hold Time (OGA)",IFERROR(sum(ENT[OGA_HoldTIme])/sum(ENT[OGA_Calls_Handled]),0),
+submetric = "Avg Wrap Time (OGA)",IFERROR(SUM(ENT[OGA_WrapTime]) / SUM(ENT[OGA_Calls_Handled]),0),
+val = "AHT (OGA)",IFERROR((SUM(ENT[OGA_TalkTime]) + SUM(ENT[OGA_WrapTime])) / SUM(ENT[OGA_Calls_Handled]),0),
+val = "Show Rate", FORMAT(IFERROR(CALCULATE(DISTINCTCOUNT(ENT[C_ID]),ENT[IsShrinkage] = 0,ENT[OGA_Calls_Handled] > 1)/ CALCULATE(DISTINCTCOUNT(ENT[C_ID]),ENT[IsShrinkage] = 1),0),"0.0%"),
+
+submetric = "In Office %",FORMAT(IF(CALCULATE(SUM(ENT[In Office]) / SUM(ENT[Total_Hours]),ENT[Consider_For_Total_Hours] = "1") = 0,0,CALCULATE(SUM(ENT[In Office]) / SUM(ENT[Total_Hours]),ENT[Consider_For_Total_Hours] = "1")),"0.0%"),
+subdetailmetric = "Unplanned Out of Office %",FORMAT(IF(CALCULATE(CALCULATE(SUM(ENT[Out of Office]),ENT[Planned_Or_Unplanned] = "Unplanned") / SUM(ENT[Total_Hours]),ENT[Consider_For_Total_Hours] = "1") = 0,0,CALCULATE(CALCULATE(SUM(ENT[Out of Office]),ENT[Planned_Or_Unplanned] = "Unplanned") / SUM(ENT[Total_Hours]),ENT[Consider_For_Total_Hours] = "1")),"0.0%"),
+subdetailmetric = "Planned Out of Office %",FORMAT(IF(CALCULATE(SUM(ENT[Out of Office]),ENT[Planned_Or_Unplanned] = "Planned") / SUM(ENT[Total_Hours]) = 0 ,0,CALCULATE(SUM(ENT[Out of Office]),ENT[Planned_Or_Unplanned] = "Planned") / SUM(ENT[Total_Hours])),"0.0%"),
+submetric = "Out of Office %",FORMAT(IF(CALCULATE(SUM(ENT[Out of Office])/SUM(ENT[Total_Hours]),ENT[Consider_For_Total_Hours] = "1") = 0,0,CALCULATE(SUM(ENT[Out of Office])/SUM(ENT[Total_Hours]),ENT[Consider_For_Total_Hours] = "1")),"0.0%"),
+
+val = "Shrinkage %", FORMAT(IF(CALCULATE((SUM(ENT[In Office]) + SUM(ENT[Out of Office])) / SUM(ENT[Total_Hours]),ENT[Consider_For_Total_Hours] = "1") = 0,0,CALCULATE((SUM(ENT[In Office]) + SUM(ENT[Out of Office])) / SUM(ENT[Total_Hours]),ENT[Consider_For_Total_Hours] = "1")),"0.0%"),
+val = "Scheduled HC",IF(CALCULATE(DISTINCTCOUNT(ENT[C_ID]),ENT[IsShrinkage] = 1) = 0,0,CALCULATE(DISTINCTCOUNT(ENT[C_ID]),ENT[IsShrinkage] = 1)),
+val = "OT Hrs Plotted",IF(CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT") = 0, 0,CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT")),
+submetric = "OT Hrs Productive",IF(CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Taken",ENT[In_Office_Or_Out_Of_Office] = "Productive") = 0,0,CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Taken",ENT[In_Office_Or_Out_Of_Office] = "Productive")),
+submetric = "OT Hrs In Office",IF(CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Taken",ENT[In_Office_Or_Out_Of_Office] = "In Office") = 0,0,CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Taken",ENT[In_Office_Or_Out_Of_Office] = "In Office")),
+val = "OT Hrs Taken",IF(CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Taken") = 0,0,CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Taken")),
+val = "OT Hrs Absent",IF(CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Removal") = 0,0,CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Removal")),
+val = "OT Hrs Cancelled",IF(CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Cancelled")= 0,0,CALCULATE(SUM(ENT[Total_Hours]),ENT[Category] = "OT",ENT[Sub_Category] = "OT Cancelled")),
+val = "VTO Hrs Plotted",IF(CALCULATE(SUM(ENT[Total_Hours]),ENT[Sub_Category] = "VTO") = 0,0,CALCULATE(SUM(ENT[Total_Hours]),ENT[Sub_Category] = "VTO"))
+)
