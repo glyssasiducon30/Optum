@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.35325.158
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "AHT Report EOD - Member Services", "AHT Report EOD - Member Services\AHT Report EOD - Member Services.rptproj", "{BED2C611-04C5-47F2-A42E-AA3F26E89E53}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		DebugLocal|Default = DebugLocal|Default
+		Release|Default = Release|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BED2C611-04C5-47F2-A42E-AA3F26E89E53}.Debug|Default.ActiveCfg = Debug
+		{BED2C611-04C5-47F2-A42E-AA3F26E89E53}.Debug|Default.Build.0 = Debug
+		{BED2C611-04C5-47F2-A42E-AA3F26E89E53}.Debug|Default.Deploy.0 = Debug
+		{BED2C611-04C5-47F2-A42E-AA3F26E89E53}.DebugLocal|Default.ActiveCfg = DebugLocal
+		{BED2C611-04C5-47F2-A42E-AA3F26E89E53}.DebugLocal|Default.Build.0 = DebugLocal
+		{BED2C611-04C5-47F2-A42E-AA3F26E89E53}.Release|Default.ActiveCfg = Release
+		{BED2C611-04C5-47F2-A42E-AA3F26E89E53}.Release|Default.Build.0 = Release
+		{BED2C611-04C5-47F2-A42E-AA3F26E89E53}.Release|Default.Deploy.0 = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {18F57171-9188-4ACF-BB97-A3532B068002}
+	EndGlobalSection
+EndGlobal

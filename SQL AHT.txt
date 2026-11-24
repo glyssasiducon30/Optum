@@ -1,0 +1,375 @@
+USE [MIS_SPOTLIGHT]
+GO
+/****** Object:  StoredProcedure [dbo].[SpotLight_AHTReport_OptumRxMembers]    Script Date: 12/23/2024 9:42:17 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Glyssa Siducon>
+-- Create date: <September 19, 2022>
+-- Description:	<OptumRx Members AHT>
+-- =============================================
+
+--ALTER PROCEDURE [dbo].[SpotLight_AHTReport_OptumRxMembers] 
+--	@StartDate date=NULL,
+--	@EndDate date=NULL,
+--	@fnLOB varchar(max)=NULL,
+--	@LOB varchar(max)=NULL,
+--	@Location varchar(max)=NULL,
+--	@Supervisor varchar(max)=NULL,
+--	@DM varchar(max)=NULL,
+--	@EmpPhase varchar(max)=NULL,
+--	@ReportView varchar(max)=NULL,
+--	@EmpStatus varchar(max)=NULL
+--AS
+--BEGIN
+
+DECLARE
+@StartDate date= '2024-12-20',
+	@EndDate date= '2024-12-20', --DATEADD(d, -1, GETUTCDATE()),
+	@fnLOB varchar(max)= 'OPTUM.V.OPTUMRX',
+	@LOB varchar(max)=NULL,
+	@Location varchar(max)=NULL,
+	@Supervisor varchar(max)=NULL,
+	@DM varchar(max)=NULL,
+	@EmpPhase varchar(max)=NULL,
+	@ReportView varchar(max)= 'RawData_View', --'RawData_View',   --'QV'
+	@EmpStatus varchar(max)=NULL
+
+	--If (@ReportView = 'RawData_View')
+	--begin
+	--Select 
+	--null as [Day],null as FULL_NAME,null as [Queue],null as Accepted,null as n_Avg_Engage_Time,null as d_Avg_Engage_Time,null as n_Avg_Hold_Time,
+	--null as d_Avg_Hold_Time,null as n_Avg_Wrap_Time,null as d_Avg_Wrap_Time,null as n_Avg_Handle_Time,null as d_Avg_Handle_Time,null as EMP_ID,null as MSID,null as SUPERVISOR,
+	--null as DEPUTY_MANAGER,null as LINE_OF_BUSINESS,null as EMP_STATUS,	null as JOB_DESC,null as [LOCATION],null as SEGMENT,null as IEX_AGENT_ID,
+	--null as GROUP_L1,null as MAIN_LOB,null as [SUB LOB],null as [SUB LOB CATEGORY]
+
+	--end	
+
+
+
+DECLARE @LineOfBusiness VARCHAR (255)=NULL 
+
+	IF @StartDate IS NULL 
+		BEGIN
+			SET @StartDate = DATEADD(d,-1,GETUTCDATE())
+		END
+
+	IF @EndDate IS NULL 
+		BEGIN
+			SET @EndDate = DATEADD(d,-1,GETUTCDATE())
+		END
+
+		IF @fnLOB='OPTUM.V.OPTUMRX'
+		BEGIN
+			SET @LineOfBusiness='OPTUM RX'
+		END
+
+
+
+-- ParamLOB -------------------------------------------------
+	IF OBJECT_ID('tempdb..#ParamLOB') IS NOT NULL DROP TABLE #ParamLOB       
+	CREATE TABLE #ParamLOB(val VARCHAR(MAX)) 
+	IF @LOB IS NULL
+		BEGIN
+			INSERT INTO #ParamLOB(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(VALUE)) 
+			FROM SpotLight_AdherencePrepareMasterDataForFilter 
+			WHERE [KEY]='GROUP_L1' AND FN_LOB IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@fnLOB,'!'))
+		END
+	ELSE
+		BEGIN 
+			INSERT INTO #ParamLOB(val)                
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@LOB,'!')
+		END
+
+--ParamSite -------------------------------------------------------------------
+	IF OBJECT_ID('tempdb..#ParamSite') IS NOT NULL DROP TABLE #ParamSite
+	CREATE TABLE #ParamSite(val VARCHAR(MAX))
+	IF @Location IS NULL
+		BEGIN
+			INSERT INTO #ParamSite(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(VALUE))
+			FROM SpotLight_AdherencePrepareMasterDataForFilter 
+			WHERE [KEY]='LOCATION' AND FN_LOB IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@fnLOB,'!'))
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #ParamSite(val)
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@Location,'!')
+		END
+	
+--ParamSupervisor -------------------------------------------------
+	IF OBJECT_ID('tempdb..#ParamSupervisor') IS NOT NULL DROP TABLE #ParamSupervisor
+	CREATE TABLE #ParamSupervisor(val VARCHAR(MAX))
+	IF @Supervisor IS NULL
+		BEGIN
+			INSERT INTO #ParamSupervisor(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(VALUE)) 
+			FROM SpotLight_AdherencePrepareMasterDataForFilter 
+			WHERE [KEY]='Supervisor' AND FN_LOB IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@fnLOB,'!'))
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #ParamSupervisor(val)              
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@Supervisor,'!')
+		END
+--ParamManager ---------------------------------------
+IF OBJECT_ID('tempdb..#ParamDM') IS NOT NULL DROP TABLE #ParamDM
+	CREATE TABLE #ParamDM(val VARCHAR(MAX))
+	IF @DM IS NULL
+		BEGIN
+			INSERT INTO #ParamDM(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(VALUE))
+			FROM SpotLight_AdherencePrepareMasterDataForFilter 
+			WHERE [KEY]='DEPUTY_MANAGER' AND FN_LOB IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@fnLOB,'!'))
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #ParamDM(val)
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@DM,'!')
+		END
+--ParamEmpPhase ----------------------------------------------------
+IF OBJECT_ID('tempdb..#ParamEmpPhase') IS NOT NULL DROP TABLE #ParamEmpPhase
+	CREATE TABLE #ParamEmpPhase(val VARCHAR(MAX))
+	IF @EmpPhase IS NULL
+		BEGIN
+			INSERT INTO #ParamEmpPhase(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(VALUE))
+			FROM SpotLight_AdherencePrepareMasterDataForFilter 
+			WHERE [KEY]='SEGMENT' AND FN_LOB IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@fnLOB,'!'))
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #ParamEmpPhase(val)
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@EmpPhase,'!')
+		END
+--ParamEmpStatus ----------------------------------------------------
+IF OBJECT_ID('tempdb..#ParamEmpStatus') IS NOT NULL DROP TABLE #ParamEmpStatus
+	CREATE TABLE #ParamEmpStatus(val VARCHAR(MAX))
+	IF @EmpStatus IS NULL
+		BEGIN
+			INSERT INTO #ParamEmpStatus(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(VALUE))
+			FROM SpotLight_AdherencePrepareMasterDataForFilter 
+			WHERE [KEY]='EMP_STATUS' AND FN_LOB IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@fnLOB,'!'))
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #ParamEmpStatus(val)
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@EmpStatus,'!')
+		END
+
+--DEMOGRAPHICS-----------------------------------------------
+
+	IF OBJECT_ID('tempdb..#demographics') IS NOT NULL DROP TABLE #demographics
+
+	Select EMP_ID,	MS_ID,	FULL_NAME,	SUPERVISOR,	DEPUTY_MANAGER,	LINE_OF_BUSINESS,
+		EMP_STATUS,	JOB_DESC,	[LOCATION],	SEGMENT,	IEX_AGENT_ID,	
+		--GROUP_L1,  -- changed from Group_L1 to Group_L4
+		GROUP_L4,
+		ROSTER_EFFECTIVE_DATE
+	into #demographics
+	from Spotlight_EmployeeInformationDeriveFromLH    
+	where 
+	ROSTER_EFFECTIVE_DATE between @StartDate and @EndDate
+	AND LINE_OF_BUSINESS IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@LineOfBusiness,'!'))
+	AND EMP_ID IS NOT NULL
+	AND ISNULL(EMP_STATUS,'-') IN (SELECT val FROM #ParamEmpStatus)
+	--AND ISNULL([LOCATION],'-') IN (SELECT val FROM #ParamSite)
+	AND ISNULL(SEGMENT,'-') IN (SELECT val FROM #ParamEmpPhase)
+	AND ISNULL(DEPUTY_MANAGER,'-') IN (SELECT val FROM #ParamDM)
+	AND ISNULL(Supervisor,'-') IN (SELECT val FROM #ParamSupervisor)
+
+	
+	--UPDATE #demographics
+	--SET GROUP_L1 = 'Member Services'
+	--WHERE GROUP_L1 = 'Web Tech'
+	
+	--Select * from #demographics
+
+--VQ table ----------------------------------------------------------
+	IF OBJECT_ID('tempdb..#vq') IS NOT NULL DROP TABLE #vq
+	IF OBJECT_ID('tempdb..#vq_raw') IS NOT NULL DROP TABLE #vq_raw
+
+	Select *
+		into #vq_raw
+	from Spotlight_GENESYS_QUEUE_REFERENCE
+		where MAIN_LOB = 'Member Services'
+		AND EFFECTIVE_START_DATE <= @EndDate 
+		AND (EFFECTIVE_END_DATE >= @StartDate or EFFECTIVE_END_DATE IS NULL)
+		AND [STATUS] = 1
+	/*where [VIRTUAL QUEUE] IN ('VQ_OPT_OptumRx_CustSrvc_Core', 'VQ_OPT_OptumRx_CustSrvc_HouseCall',	
+		'VQ_OPT_OptumRx_CustSrvc_UHC_MR_Offshore', 'VQ_OPT_OptumRx_CustSrvc_Expert',	
+		'VQ_OPT_OptumRx_CustSrvc_Advanced', 'VQ_OPT_OptumRx_CustSrvc_WebTechSupport',	
+		'VQ_OPT_OptumRx_CustSrvc_Core_ASA25', 'VQ_OPT_OptumRx_CustSrvc_Assist_OGS',	
+		'VQ_OPT_OptumRx_CustSrvc_Tiered_Dedicated_Default_Error', 'VQ_OPT_OptumRx_CustSrvc_RepeatCaller_Offshore',
+		'VQ_OPT_OptumRx_CustSrvc_Escalation_OGS', 'VQ_OPT_OptumRx_CustSrvc_RMO', 'VQ_OPT_OptumRx_ConsultPharm_General_Default',
+		'VQ_OPT_OptumRx_CustSrvc_CastiaRx', 'VQ_OPT_OptumRx_CustSrvc_CastiaRx_MedD', 'VQ_OPT_OptumRx_CustSrvc_PS_Custom',
+		'VQ_OPT_OptumRx_CustSrvc_Training_MO',
+		'VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_BE', 'VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_MO',
+		'VQ_OPT_OptumRx_CustSrvc_UHC_MR_Offshore', 'VQ_OPT_OptumRx_CustSrvc_IBC_Comm', 
+		'VQ_OPT_OptumRx_CustSrvc_PBM_PRFD_Global', 'VQ_OPT_OptumRx_CustSrvc_PCS_PRFD_Global', 'VQ_OPT_OptumRx_CustSrvc_PCS_TrainingGlobal_MO')
+		--   note: 'VQ_OPT_OptumRx_CustSrvc_PS_Custom','VQ_OPT_OptumRx_CustSrvc_Training_MO' are added starting 05.23.2023
+		-- note: 'VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_BE', 'VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_MO' have been added starting 07.13.2023
+		-- note: VQ_OPT_OptumRx_CustSrvc_UHC_MR_Offshore has been added 12/12/2023
+		--AND [VIRTUAL QUEUE] NOT IN 'VQ_OPT_OptumRx_CustSrvc_UHC_MR_Offshore'
+		-- note: VQ_OPT_OptumRx_CustSrvc_IBC_Comm has been added starting 3.19.2024
+		-- 'VQ_OPT_OptumRx_CustSrvc_PBM_PRFD_Global', 'VQ_OPT_OptumRx_CustSrvc_PCS_PRFD_Global', 'VQ_OPT_OptumRx_CustSrvc_PCS_TrainingGlobal_MO' - added 5.9.2024  */
+
+		--Select * from Spotlight_GENESYS_QUEUE_REFERENCE
+		--order by TIME_STAMP desc
+
+--Select * from #vq_raw
+
+IF @StartDate < '2024-06-01'
+BEGIN
+	UPDATE #vq_raw
+	SET  [SUB LOB] ='MS M&R'
+	WHERE [VIRTUAL QUEUE] = 'VQ_OPT_OptumRx_CustSrvc_UHC_MR_Offshore'
+END
+
+
+--Select * from #vq_raw
+
+IF @StartDate < '2024-06-01'
+BEGIN
+	UPDATE #vq_raw
+		SET  [SUB LOB] ='MS CORE'
+		WHERE [VIRTUAL QUEUE] IN ('VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_BE','VQ_OPT_OptumRx_CustSrvc_Advanced','VQ_OPT_OptumRx_CustSrvc_Expert') -- CORE and ADV are now combined. Joe Ortega requested to make ADV as CORE (changes in USP made in 2/5/2024)
+END
+
+--Select * from #vq_raw
+
+Select distinct [VIRTUAL QUEUE], FN_LOB, MAIN_LOB, [SUB LOB], [SUB LOB CATEGORY]
+INTO #VQ
+FROM #vq_raw
+
+--Select * from #VQ
+
+
+--BASE TABLE --------------------------------------------------------
+	IF OBJECT_ID('tempdb..#baseraw') IS NOT NULL DROP TABLE #baseraw
+
+		Select 
+			[Day]
+			,FULL_NAME
+			,[Queue]
+			,Accepted
+			,n_Avg_Engage_Time
+			,d_Avg_Engage_Time
+			,n_Avg_Hold_Time
+			,d_Avg_Hold_Time
+			,n_Avg_Wrap_Time
+			,d_Avg_Wrap_Time
+			,n_Avg_Handle_Time
+			,d_Avg_Handle_Time
+			,EMP_ID
+			,MSID
+			,SUPERVISOR
+			,DEPUTY_MANAGER
+			,LINE_OF_BUSINESS
+			,EMP_STATUS
+			,JOB_DESC
+			,[LOCATION]
+			,SEGMENT
+			,IEX_AGENT_ID
+			,GROUP_L4
+			,MAIN_LOB
+			,[SUB LOB]
+			,[SUB LOB CATEGORY]
+			into #baseraw
+			from
+			(
+				SELECT [Day], Agent_Name, [Queue],
+				substring(Agent_Name,
+                charindex('(', Agent_Name) + 1,
+                charindex(')', Agent_Name) - charindex('(', Agent_Name) - 1) as MSID,
+				sum(accepted) as accepted,
+				sum(n_Avg_Engage_Time) as n_Avg_Engage_Time,
+				sum(d_Avg_Engage_Time) as d_Avg_Engage_Time,
+				sum(n_Avg_Hold_Time) as n_Avg_Hold_Time,
+				sum(d_Avg_Hold_Time) as d_Avg_Hold_Time,
+				sum(n_Avg_Wrap_Time) as n_Avg_Wrap_Time,
+				sum(d_Avg_Wrap_Time) as d_Avg_Wrap_Time,
+				sum(n_Avg_Handle_Time) as n_Avg_Handle_Time,
+				sum(d_Avg_Handle_Time) as d_Avg_Handle_Time
+				
+		FROM dbo.GenesysAgentAHTReportForOptumRxView
+		where [Queue] IN (select distinct [VIRTUAL QUEUE] from #vq_raw)
+		
+		--('VQ_OPT_OptumRx_CustSrvc_Core', 'VQ_OPT_OptumRx_CustSrvc_HouseCall',	
+		--'VQ_OPT_OptumRx_CustSrvc_UHC_MR_Offshore', 'VQ_OPT_OptumRx_CustSrvc_Expert',	
+		--'VQ_OPT_OptumRx_CustSrvc_Advanced', 'VQ_OPT_OptumRx_CustSrvc_WebTechSupport',	
+		--'VQ_OPT_OptumRx_CustSrvc_Core_ASA25', 'VQ_OPT_OptumRx_CustSrvc_Assist_OGS',	
+		--'VQ_OPT_OptumRx_CustSrvc_Tiered_Dedicated_Default_Error', 'VQ_OPT_OptumRx_CustSrvc_RepeatCaller_Offshore',
+		--'VQ_OPT_OptumRx_CustSrvc_Escalation_OGS', 'VQ_OPT_OptumRx_CustSrvc_RMO', 'VQ_OPT_OptumRx_ConsultPharm_General_Default',
+		--'VQ_OPT_OptumRx_CustSrvc_CastiaRx', 'VQ_OPT_OptumRx_CustSrvc_CastiaRx_MedD','VQ_OPT_OptumRx_CustSrvc_PS_Custom',
+		--'VQ_OPT_OptumRx_CustSrvc_Training_MO',
+		--'VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_BE', 'VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_MO',
+		--'VQ_OPT_OptumRx_CustSrvc_UHC_MR_Offshore', 'VQ_OPT_OptumRx_CustSrvc_IBC_Comm',
+		--'VQ_OPT_OptumRx_CustSrvc_PBM_PRFD_Global', 'VQ_OPT_OptumRx_CustSrvc_PCS_PRFD_Global', 'VQ_OPT_OptumRx_CustSrvc_PCS_TrainingGlobal_MO')   
+		--   note: 'VQ_OPT_OptumRx_CustSrvc_PS_Custom','VQ_OPT_OptumRx_CustSrvc_Training_MO' are added starting 05.23.2023
+		-- note: 'VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_BE', 'VQ_OPT_OptumRx_CustSrvc_TrainingGlobal_MO' have been added starting 07.13.2023
+		-- note: VQ_OPT_OptumRx_CustSrvc_UHC_MR_Offshore has been added 12/12/2023
+		-- note: VQ_OPT_OptumRx_CustSrvc_IBC_Comm has been added starting 3.19.2024
+		-- 'VQ_OPT_OptumRx_CustSrvc_PBM_PRFD_Global', 'VQ_OPT_OptumRx_CustSrvc_PCS_PRFD_Global', 'VQ_OPT_OptumRx_CustSrvc_PCS_TrainingGlobal_MO') added starting 5/6/2024
+		
+		and d_Avg_Handle_Time not in ('0')
+		and d_Avg_Engage_Time not in ('0')
+		and d_Avg_Hold_Time not in ('0')
+		and d_Avg_Wrap_Time not in ('0')
+		and [Day] between @StartDate and @EndDate
+		
+		group by
+		[Day], Agent_Name, [Queue]
+		) base 
+
+		 left join #demographics demo on demo.MS_ID = base.MSID
+		and demo.ROSTER_EFFECTIVE_DATE = base.[Day]
+		inner join #vq vq on vq.[VIRTUAL QUEUE] = base.[Queue]
+		where
+			ROSTER_EFFECTIVE_DATE between @StartDate and @EndDate
+			AND LINE_OF_BUSINESS IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@LineOfBusiness,'!'))
+			AND MSID IS NOT NULL
+			AND ISNULL(EMP_STATUS,'-') IN (SELECT val FROM #ParamEmpStatus)
+			--AND ISNULL([LOCATION],'-') IN (SELECT val FROM #ParamSite)
+			AND ISNULL(SEGMENT,'-') IN (SELECT val FROM #ParamEmpPhase)
+			AND ISNULL(DEPUTY_MANAGER,'-') IN (SELECT val FROM #ParamDM)
+			AND ISNULL(Supervisor,'-') IN (SELECT val FROM #ParamSupervisor)
+
+--Select * from #baseraw
+
+
+if @ReportView = 'RawData_View'
+begin
+Select * from #baseraw
+end
+
+if @ReportView = 'QV'
+begin 
+	Select distinct [VIRTUAL QUEUE]
+	from #vq_raw
+end
+
+
+--End

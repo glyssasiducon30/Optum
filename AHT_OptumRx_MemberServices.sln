@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33920.266
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "AHT_OptumRx_MemberServices", "AHT_OptumRx_MemberServices\AHT_OptumRx_MemberServices.rptproj", "{D3B33383-A028-4E8F-8BFA-7C413E16B44F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		DebugLocal|Default = DebugLocal|Default
+		Release|Default = Release|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D3B33383-A028-4E8F-8BFA-7C413E16B44F}.Debug|Default.ActiveCfg = Debug
+		{D3B33383-A028-4E8F-8BFA-7C413E16B44F}.Debug|Default.Build.0 = Debug
+		{D3B33383-A028-4E8F-8BFA-7C413E16B44F}.Debug|Default.Deploy.0 = Debug
+		{D3B33383-A028-4E8F-8BFA-7C413E16B44F}.DebugLocal|Default.ActiveCfg = DebugLocal
+		{D3B33383-A028-4E8F-8BFA-7C413E16B44F}.DebugLocal|Default.Build.0 = DebugLocal
+		{D3B33383-A028-4E8F-8BFA-7C413E16B44F}.Release|Default.ActiveCfg = Release
+		{D3B33383-A028-4E8F-8BFA-7C413E16B44F}.Release|Default.Build.0 = Release
+		{D3B33383-A028-4E8F-8BFA-7C413E16B44F}.Release|Default.Deploy.0 = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6458A299-AB06-4BD9-9077-8DEFF3A4422B}
+	EndGlobalSection
+EndGlobal
