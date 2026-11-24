@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1525
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F14B399A-7131-4C87-9E4B-1186C45EF12D}") = "PhoneTimeTrackerReportForMemberServices", "PhoneTimeTrackerReportForMemberServices\PhoneTimeTrackerReportForMemberServices.rptproj", "{E0BFFFC8-E788-4371-A126-7E9D48C9576C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		DebugLocal|Default = DebugLocal|Default
+		Release|Default = Release|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E0BFFFC8-E788-4371-A126-7E9D48C9576C}.Debug|Default.ActiveCfg = Debug
+		{E0BFFFC8-E788-4371-A126-7E9D48C9576C}.Debug|Default.Build.0 = Debug
+		{E0BFFFC8-E788-4371-A126-7E9D48C9576C}.Debug|Default.Deploy.0 = Debug
+		{E0BFFFC8-E788-4371-A126-7E9D48C9576C}.DebugLocal|Default.ActiveCfg = DebugLocal
+		{E0BFFFC8-E788-4371-A126-7E9D48C9576C}.DebugLocal|Default.Build.0 = DebugLocal
+		{E0BFFFC8-E788-4371-A126-7E9D48C9576C}.Release|Default.ActiveCfg = Release
+		{E0BFFFC8-E788-4371-A126-7E9D48C9576C}.Release|Default.Build.0 = Release
+		{E0BFFFC8-E788-4371-A126-7E9D48C9576C}.Release|Default.Deploy.0 = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A867D9C7-2CA3-49DB-905B-447FD9E25B5C}
+	EndGlobalSection
+EndGlobal

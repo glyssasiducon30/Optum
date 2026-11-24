@@ -1,0 +1,362 @@
+USE [MIS_SPOTLIGHT]
+GO
+/****** Object:  StoredProcedure [dbo].[SpotLight_PhoneTimeTracker_Report_OptumRxMembers_v2]    Script Date: 8/27/2025 4:00:23 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:	Glyssa Siducon
+-- Create date: 03.16.2023
+-- Description:	MS AM Phone Time Tracker
+-- =============================================
+/**/
+	ALTER PROCEDURE [dbo].[SpotLight_PhoneTimeTracker_Report_OptumRxMembers_v2]
+	
+	@StartDate date = NULL,
+	@EndDate date = NULL,
+	@LineOfBusiness VARCHAR (255)=NULL,
+	@LOB varchar(max)=NULL,
+	@Location varchar(max)=NULL,
+	@Supervisor varchar(max)=NULL,
+	@Deputy_Manager varchar(max)=NULL,
+	@ReportView varchar(max)=NULL
+
+	AS
+	BEGIN
+
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	--SET NOCOUNT ON;
+/**/
+--DECLARE 
+--	@StartDate date= '2025-08-01',
+--	@EndDate date= '2025-08-26',
+--	--@fnLOB varchar(max)= 'OPTUM.V.OPTUMRX',
+--	@LineOfBusiness varchar(255)= 'OPTUM RX',
+--	@LOB varchar(max) = NULL,
+--	@Location varchar(max)=NULL,
+--	@Supervisor varchar(max)=NULL,	
+--	@Deputy_Manager varchar(max)=NULL,
+--	@Segment varchar(max)=NULL,
+--	@ReportView varchar(max)= 'Summary_View',
+--	@EmpStatus varchar(max)=NULL
+
+
+--If (@ReportView = 'Summary_View')
+--	begin
+--	Select 
+--	null as [Type],null as [Align], null as [Date],null as Full_name,null as MSID,null as EMP_ID,null as [Ready Time],null as [Busy Time],null as [Wrap Time],null as [Phone Hours],
+--	null as SUPERVISOR,null as	DEPUTY_MANAGER,null as	LINE_OF_BUSINESS, null as EMP_STATUS,	null as JOB_DESC, null as	[LOCATION], null as	SEGMENT, null as IEX_AGENT_ID, null as	GROUP_L1
+
+--	end	
+
+ --DECLARE @LineOfBusiness VARCHAR (255)=NULL 
+
+	IF @StartDate IS NULL 
+		BEGIN
+			SET @StartDate = DATEADD(d,-1,GETUTCDATE())
+		END
+
+	IF @EndDate IS NULL 
+		BEGIN
+			SET @EndDate = DATEADD(d,-1,GETUTCDATE())
+		END
+
+		IF @LineOfBusiness IS NULL
+		BEGIN
+			SET @LineOfBusiness='OPTUM RX'
+		END
+  -- ParamLOB ---------------------------------------------------------
+   IF OBJECT_ID('tempdb..#ParamLOB') IS NOT NULL DROP TABLE #ParamLOB    
+	CREATE TABLE #ParamLOB(val VARCHAR(MAX)) 
+	IF @LOB IS NULL
+		BEGIN
+			INSERT INTO #ParamLOB(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(GROUP_L4)) as GROUP_L1
+			FROM Spotlight_EmployeeInformationDeriveFromLH
+			WHERE LINE_OF_BUSINESS = 'OPTUM RX'
+			AND GROUP_L4 = 'PHL PHARMACY MEMBER SRVCES OPT'
+			--AND JOB_DESC LIKE '%Support%' 
+			AND ROSTER_EFFECTIVE_DATE between @StartDate and @EndDate 
+		END
+	ELSE
+		BEGIN 
+			INSERT INTO #ParamLOB(val)                
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@LOB,'!')
+		END
+
+	
+
+
+
+
+ -- IF OBJECT_ID('tempdb..#ParamLOB') IS NOT NULL DROP TABLE #ParamLOB    
+	--CREATE TABLE #ParamLOB(val VARCHAR(MAX)) 
+	--IF @LOB IS NULL
+	--	BEGIN
+	--		INSERT INTO #ParamLOB(val)
+	--		SELECT 
+	--			DISTINCT LTRIM(RTRIM(VALUE)) 
+	--		FROM SpotLight_AdherencePrepareMasterDataForFilter 
+	--		WHERE [KEY]='GROUP_L1' AND FN_LOB IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@fnLOB,'!'))
+	--	END
+	--ELSE
+	--	BEGIN 
+	--		INSERT INTO #ParamLOB(val)                
+	--		SELECT 
+	--			LTRIM(RTRIM(VALUE)) 
+	--		FROM dbo.FnSplit(@LOB,'!')
+	--	END
+
+		
+
+--ParamSite -------------------------------------------------------------------
+	IF OBJECT_ID('tempdb..#ParamSite') IS NOT NULL DROP TABLE #ParamSite
+	CREATE TABLE #ParamSite(val VARCHAR(MAX))
+	IF @Location IS NULL
+		BEGIN
+			INSERT INTO #ParamSite(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM([LOCATION]))
+			FROM Spotlight_EmployeeInformationDeriveFromLH
+			WHERE LINE_OF_BUSINESS = 'OPTUM RX'
+			AND GROUP_L4 = 'PHL PHARMACY MEMBER SRVCES OPT'
+			--AND JOB_DESC LIKE '%Support%' 
+			AND ROSTER_EFFECTIVE_DATE between @StartDate and @EndDate
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #ParamSite(val)
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@Location,'!')
+		END
+
+	
+--ParamSupervisor -------------------------------------------------
+IF OBJECT_ID('tempdb..#ParamSupervisor') IS NOT NULL DROP TABLE #ParamSupervisor
+	CREATE TABLE #ParamSupervisor(val VARCHAR(MAX))
+	IF @Supervisor IS NULL
+		BEGIN
+			INSERT INTO #ParamSupervisor(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(Supervisor)) 
+			FROM Spotlight_EmployeeInformationDeriveFromLH
+			WHERE LINE_OF_BUSINESS = 'OPTUM RX'
+			AND GROUP_L4 = 'PHL PHARMACY MEMBER SRVCES OPT'
+			--AND JOB_DESC LIKE '%Support%' 
+			AND ROSTER_EFFECTIVE_DATE between @StartDate and @EndDate
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #ParamSupervisor(val)              
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@Supervisor,'!')
+		END
+
+	--IF OBJECT_ID('tempdb..#ParamSupervisor') IS NOT NULL DROP TABLE #ParamSupervisor
+	--CREATE TABLE #ParamSupervisor(val VARCHAR(MAX))
+	--IF @Supervisor IS NULL
+	--	BEGIN
+	--		INSERT INTO #ParamSupervisor(val)
+	--		SELECT 
+	--			DISTINCT LTRIM(RTRIM(VALUE)) 
+	--		FROM SpotLight_AdherencePrepareMasterDataForFilter 
+	--		WHERE [KEY]='Supervisor' AND FN_LOB IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@fnLOB,'!'))
+	--	END
+	--ELSE
+	--	BEGIN
+	--		INSERT INTO #ParamSupervisor(val)              
+	--		SELECT 
+	--			LTRIM(RTRIM(VALUE)) 
+	--		FROM dbo.FnSplit(@Supervisor,'!')
+	--	END
+
+--ParamManager ---------------------------------------
+IF OBJECT_ID('tempdb..#ParamDeputy_Manager') IS NOT NULL DROP TABLE #ParamDeputy_Manager
+	CREATE TABLE #ParamDeputy_Manager(val VARCHAR(MAX))
+	IF @Deputy_Manager IS NULL
+		BEGIN
+			INSERT INTO #ParamDeputy_Manager(val)
+			SELECT 
+				DISTINCT LTRIM(RTRIM(DEPUTY_MANAGER))
+			FROM Spotlight_EmployeeInformationDeriveFromLH
+			WHERE LINE_OF_BUSINESS = 'OPTUM RX'
+			AND GROUP_L4 = 'PHL PHARMACY MEMBER SRVCES OPT'
+			--AND JOB_DESC LIKE '%Support%' 
+			AND ROSTER_EFFECTIVE_DATE between @StartDate and @EndDate
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #ParamDeputy_Manager(val)
+			SELECT 
+				LTRIM(RTRIM(VALUE)) 
+			FROM dbo.FnSplit(@Deputy_Manager,'!')
+		END
+
+
+--DEMOGRAPHICS-----------------------------------------------
+
+	IF OBJECT_ID('tempdb..#demographics') IS NOT NULL DROP TABLE #demographics
+
+	Select EMP_ID,	MS_ID,	FULL_NAME,	SUPERVISOR,	DEPUTY_MANAGER,	LINE_OF_BUSINESS,
+		EMP_STATUS,	JOB_DESC,	[LOCATION],	SEGMENT,	IEX_AGENT_ID,	GROUP_L4 as GROUP_L1, ROSTER_EFFECTIVE_DATE,
+		GROUP_L3
+	into #demographics
+			FROM Spotlight_EmployeeInformationDeriveFromLH
+			WHERE LINE_OF_BUSINESS = 'OPTUM RX'
+			AND GROUP_L4 = 'PHL PHARMACY MEMBER SRVCES OPT'
+	AND ROSTER_EFFECTIVE_DATE between @StartDate and @EndDate
+	AND EMP_ID IS NOT NULL
+	AND ISNULL(DEPUTY_MANAGER,'-') IN (SELECT val FROM #ParamDeputy_Manager)
+	AND ISNULL(Supervisor,'-') IN (SELECT val FROM #ParamSupervisor)
+	--AND JOB_DESC LIKE '%Support%'
+
+	OPTION(RECOMPILE)
+
+	--Select * from #demographics
+	
+	
+-- raw---------------------------------------------------------------
+IF OBJECT_ID('tempdb..#raw') IS NOT NULL DROP TABLE #raw
+SELECT [Shift_date] AS [Date],
+		CONVERT(VARCHAR(10),DATEPART(MM,[Shift_date])) + '-' + DATENAME(MONTH,[Shift_date]) AS [MonthNum],
+			Agent_Name, 
+				substring(Agent_Name,
+                charindex('(', Agent_Name) + 1,
+                charindex(')', Agent_Name) - charindex('(', Agent_Name) - 1) as MSID,
+				[Ready Time], [Busy Time], [Wrap Time],
+				[Ready Time]+[Busy Time]+[Wrap Time] as [Phone Hours]
+
+	into #raw
+			
+		FROM GenesysAgentSummaryActivityReport
+		where Shift_date between @StartDate and @EndDate
+
+		OPTION(RECOMPILE)
+
+		--Select * from #raw
+
+
+-- Base Raw ------------------------------------------------------------
+
+	IF OBJECT_ID('tempdb..#baseraw') IS NOT NULL DROP TABLE #baseraw
+
+			Select [Date], [MonthNum], demo.Full_name, MSID, EMP_ID,[Ready Time],[Busy Time],[Wrap Time], [Phone Hours],SUPERVISOR,	DEPUTY_MANAGER,	LINE_OF_BUSINESS,
+		EMP_STATUS,	JOB_DESC,	[LOCATION],	SEGMENT,	IEX_AGENT_ID,	GROUP_L1
+			into #baseraw
+			from #raw base
+
+		 left join #demographics demo on demo.MS_ID = base.MSID
+		and demo.ROSTER_EFFECTIVE_DATE = base.[Date]
+		where
+			ROSTER_EFFECTIVE_DATE between @StartDate and @EndDate
+			AND LINE_OF_BUSINESS IN (SELECT LTRIM(RTRIM(VALUE)) FROM dbo.FnSplit(@LineOfBusiness,'!'))
+			AND MSID IS NOT NULL
+			AND GROUP_L3 LIKE '%Support%' 
+			--AND ISNULL(EMP_STATUS,'-') IN (SELECT val FROM #ParamEmpStatus)
+			AND ISNULL([LOCATION],'-') IN (SELECT val FROM #ParamSite)
+			AND ISNULL(DEPUTY_MANAGER,'-') IN (SELECT val FROM #ParamDeputy_Manager)
+			AND ISNULL(Supervisor,'-') IN (SELECT val FROM #ParamSupervisor)
+			--AND ISNULL(SEGMENT,'-') IN (SELECT val FROM #ParamSegment)
+			--AND [Phone Hours] NOT IN ('0')
+		OPTION(RECOMPILE)
+
+	--Select * from #baseraw
+
+
+
+ -- Summary ---------------------------------
+ 	BEGIN
+			declare 
+					--@vchSessionID as varchar(max) = '',
+					--@ConsiderNoofDaysDentalAndVision as varchar(max) = '',
+					--@ConsiderNoofWeeksDentalAndVision as varchar(max) = '',
+					@vchSqlScript as varchar(max) = ''
+
+-- Report View --------------------------------------------------------------------------------------
+IF OBJECT_ID('tempdb..#SubQueryPhoneHoursOverallMonthWiseMemerServices') IS NOT NULL DROP TABLE #SubQueryPhoneHoursOverallMonthWiseMemerServices
+IF OBJECT_ID('tempdb..#SubQueryPhoneHoursOverallDayWiseMemerServices') IS NOT NULL DROP TABLE #SubQueryPhoneHoursOverallDayWiseMemerServices
+IF OBJECT_ID('tempdb..#PhoneHoursOverallDayWiseMemerServices') IS NOT NULL DROP TABLE #PhoneHoursOverallDayWiseMemerServices
+IF OBJECT_ID('tempdb..#PhoneHoursOverallMonthWiseMemerServices') IS NOT NULL DROP TABLE #PhoneHoursOverallMonthWiseMemerServices
+
+	if @ReportView = 'Summary_View'
+	begin
+				Select
+				[Date], SUM([Phone Hours]) [Phone Hours]
+				INTO #SubQueryPhoneHoursOverallDayWiseMemerServices
+				FROM #baseraw
+				GROUP BY [Date]
+	
+				SELECT 
+					[MonthNum], SUM([Phone Hours]) [Phone Hours]
+				INTO #SubQueryPhoneHoursOverallMonthWiseMemerServices
+				FROM #baseraw
+				GROUP BY [MonthNum]
+
+
+
+	----- Overall Day Wise ------
+
+				SELECT
+					[Date], [Phone Hours]
+				INTO #PhoneHoursOverallDayWiseMemerServices
+				FROM
+				(
+					SELECT 
+						[Date], [Phone Hours]
+					FROM #SubQueryPhoneHoursOverallDayWiseMemerServices
+				) PH
+
+
+	
+		----- Overall Month Wise ------
+
+			SELECT
+					[MonthNum], [Phone Hours]
+				INTO #PhoneHoursOverallMonthWiseMemerServices
+				FROM
+				(
+					SELECT 
+						[MonthNum], [Phone Hours]
+					FROM #SubQueryPhoneHoursOverallMonthWiseMemerServices
+				) PH
+
+
+
+set @vchSqlScript =
+				'SELECT 
+				[Type], [Align], [Date], Full_name, MSID, EMP_ID, [Ready Time], [Busy Time], [Wrap Time], [Phone Hours],SUPERVISOR,	DEPUTY_MANAGER,	LINE_OF_BUSINESS,
+		EMP_STATUS,	JOB_DESC,	[LOCATION],	SEGMENT,	IEX_AGENT_ID,	GROUP_L1
+				FROM 
+				(
+					SELECT 
+						''Monthly'' AS Type,''1'' AS Align,base.[MonthNum] AS ''Date'',base.Full_name, base.MSID, base.EMP_ID, base.[Ready Time], base.[Busy Time], base.[Wrap Time], base.[Phone Hours],base.SUPERVISOR,
+						base.DEPUTY_MANAGER,	base.LINE_OF_BUSINESS, base.EMP_STATUS,	base.JOB_DESC,	base.[LOCATION],	base.SEGMENT,	base.IEX_AGENT_ID,	base.GROUP_L1
+					FROM #baseraw base
+					INNER JOIN #PhoneHoursOverallMonthWiseMemerServices PHMonth ON PHMonth.[MonthNum]=base.[MonthNum] 
+
+					UNION ALL
+					SELECT 
+						''Daily'' AS Type,''2'' AS Align,cast(base.[Date] AS varchar(30)) AS ''Date'',base.Full_name, base.MSID, base.EMP_ID, base.[Ready Time], base.[Busy Time], base.[Wrap Time], base.[Phone Hours],base.SUPERVISOR,
+						base.DEPUTY_MANAGER,	base.LINE_OF_BUSINESS, base.EMP_STATUS,	base.JOB_DESC,	base.[LOCATION],	base.SEGMENT,	base.IEX_AGENT_ID,	base.GROUP_L1
+					FROM #baseraw base
+					INNER JOIN #PhoneHoursOverallDayWiseMemerServices PHDaily ON PHDaily.[Date]=base.[Date]
+					
+				) PHFinalResultSet 
+			ORDER BY ''Date''
+			'
+			exec(@vchSqlScript)
+
+END
+	END
+
+
+
+	END
