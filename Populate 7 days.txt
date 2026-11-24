@@ -1,0 +1,32 @@
+Sub Populate_PMS_Roster()
+
+    Dim oldDate As Date, newDate As Date
+    Dim countRecords As Long, startRow As Long, endRow As Long, a As Long, b As Long
+    
+    Application.ScreenUpdating = False
+    
+    'Set date of previous day
+    newDate = Date + 7
+    With ActiveSheet
+        oldDate = WorksheetFunction.Max(.Range("AM:AM"))
+        countRecords = WorksheetFunction.CountIf(.Range("AM:AM"), oldDate)      'Count of records
+        For b = 1 To newDate - oldDate                                          'Populate roster based on lapsed date/s
+            endRow = .Range("AM:AM").End(xlDown).Row                            'Old end row
+            startRow = endRow - countRecords + 1                                'Old start row
+            
+            .Range("A" & startRow, "AM" & endRow).Copy
+            .Range("A" & endRow + 1).PasteSpecial xlPasteValues
+            
+            endRow = .Range("AM:AM").End(xlDown).Row                            'New end row
+            startRow = endRow - countRecords + 1                                'New start row
+            
+            .Range("AM" & startRow, "AM" & endRow).Value = oldDate + b          'New roster effective date
+        Next b
+    End With
+    
+    Application.ScreenUpdating = True
+    
+
+    MsgBox "Done!" & vbNewLine & "Count: " & countRecords, vbInformation + vbOKOnly
+
+End Sub
